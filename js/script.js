@@ -712,9 +712,8 @@ function allSameSize() {
 }
 
 // Handle selecting an image with the file picker
-function handleImageSelection(evt) {
+async function handleImageSelection(evt) {
   const files = Array.from(evt.target.files);
-  files.sort((a, b) => a.name > b.name);
   // error message
   const onlyImagesFileError = document.getElementById('only-images-file-error');
 
@@ -734,7 +733,7 @@ function handleImageSelection(evt) {
     });
   }
 
-  for (let i = 0; files[i]; i++) {
+  for (let i = 0; i < files.length; i++) {
     // Only process image files.
     if (!files[i].type.match('image.*')) {
       onlyImagesFileError.style.display = 'block';
@@ -742,11 +741,17 @@ function handleImageSelection(evt) {
       continue;
     }
 
+    // Process file sequentially to maintain order
+    await processFile(files[i]);
+  }
+}
+
+// Helper function to process a single file
+function processFile(file) {
+  return new Promise((resolve) => {
     const reader = new FileReader();
 
-    reader.onload = (file) => {
-      // eslint-disable-next-line no-param-reassign
-      file.name = reader.name;
+    reader.onload = (fileEvent) => {
       // Render thumbnail.
       const img = new Image();
 
@@ -819,6 +824,7 @@ function handleImageSelection(evt) {
         const fileInputColumn = document.getElementById('file-input-column');
         const imageSizeSettings = document.getElementById('image-size-settings');
         const canvasContainer = document.getElementById('images-canvas-container');
+        const noFileSelected = document.querySelectorAll('.no-file-selected');
 
         const removeButtonOnClick = () => {
           const image = images.get(img);
@@ -865,12 +871,13 @@ function handleImageSelection(evt) {
           document.getElementById('all-same-size').style.display = 'block';
         }
         placeImage(images.last());
+
+        resolve();
       };
-      img.src = file.target.result;
+      img.src = fileEvent.target.result;
     };
-    reader.name = files[i].name;
-    reader.readAsDataURL(files[i]);
-  }
+    reader.readAsDataURL(file);
+  });
 }
 
 function imageToString(image) {
