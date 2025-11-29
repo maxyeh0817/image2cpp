@@ -896,6 +896,18 @@ function getIdentifier() {
   return vn && vn.value.length ? vn.value : identifier;
 }
 
+// Get the custom output name (for animation sequences)
+function getOutputName() {
+  const on = document.getElementById('outputName');
+  return on && on.value.length ? on.value : '';
+}
+
+// Get the custom delay value
+function getOutputDelay() {
+  const od = document.getElementById('outputDelay');
+  return od && od.value.length ? parseInt(od.value) : null;
+}
+
 // Output the image string to the textfield
 // eslint-disable-next-line no-unused-vars
 function generateOutputString() {
@@ -906,6 +918,8 @@ function generateOutputString() {
     case 'arduino': {
       const varQuickArray = [];
       let bytesUsed = 0;
+      const outputName = getOutputName();
+      const outputDelay = getOutputDelay();
       // --
       images.each((image) => {
         code = imageToString(image);
@@ -918,16 +932,38 @@ function generateOutputString() {
         const comment = `// '${image.glyph}', ${image.canvas.width}x${image.canvas.height}px\n`;
         bytesUsed += code.split('\n').length * 16; // 16 bytes per line.
 
-        const varname = getIdentifier() + image.glyph.replace(/[^a-zA-Z0-9]/g, '_');
+        let varname;
+        if (outputName) {
+          // Use the new naming format: epd_bitmap_frame_{name}_{id}_delay_0
+          const glyphClean = image.glyph.replace(/[^a-zA-Z0-9_-]/g, '_');
+          varname = `${getIdentifier()}frame_${outputName}_${glyphClean}`;
+        } else {
+          varname = getIdentifier() + image.glyph.replace(/[^a-zA-Z0-9]/g, '_');
+        }
         varQuickArray.push(varname);
         code = `${comment}const ${getImageType()} ${varname} [] PROGMEM = {\n${code}};\n`;
         outputString += code;
       });
 
-      varQuickArray.sort();
+      // Don't sort when using outputName to preserve frame order
+      if (!outputName) {
+        varQuickArray.sort();
+      }
       outputString += `\n// Array of all bitmaps for convenience. (Total bytes used to store images in PROGMEM = ${bytesUsed})\n`;
-      outputString += `const int ${getIdentifier()}allArray_LEN = ${varQuickArray.length};\n`;
-      outputString += `const ${getImageType()}* ${getIdentifier()}allArray[${varQuickArray.length}] = {\n\t${varQuickArray.join(',\n\t')}\n};\n`;
+      
+      if (outputName) {
+        // Use the new naming format with outputName
+        outputString += `const int ${getIdentifier()}allArray_${outputName}_LEN = ${varQuickArray.length};\n`;
+        outputString += `const ${getImageType()}* ${getIdentifier()}allArray_${outputName}[${varQuickArray.length}] = {\n\t${varQuickArray.join(',\n\t')}\n};\n`;
+        
+        // Add delay variable if delay is provided
+        if (outputDelay !== null) {
+          outputString += `\nconst uint16_t ${outputName}_delay = ${outputDelay};\n`;
+        }
+      } else {
+        outputString += `const int ${getIdentifier()}allArray_LEN = ${varQuickArray.length};\n`;
+        outputString += `const ${getImageType()}* ${getIdentifier()}allArray[${varQuickArray.length}] = {\n\t${varQuickArray.join(',\n\t')}\n};\n`;
+      }
       break;
     }
 
@@ -1030,12 +1066,33 @@ function generateOutputString() {
 
   document.getElementById('code-output').value = outputString;
   document.getElementById('copy-button').disabled = false;
+
+  // Generate include output when both name and delay are provided
+  const outputName = getOutputName();
+  const outputDelay = getOutputDelay();
+  const includeContainer = document.getElementById('include-output-container');
+  const includeOutput = document.getElementById('include-output');
+
+  if (outputName && outputDelay !== null && settings.outputFormat === 'arduino') {
+    const includeCode = `#include <${outputName}.h>\n\n{ "${outputName}",${getIdentifier()}allArray_${outputName},${getIdentifier()}allArray_${outputName}_LEN,${outputName}_delay }`;
+    includeOutput.value = includeCode;
+    includeContainer.style.display = 'block';
+  } else {
+    includeOutput.value = '';
+    includeContainer.style.display = 'none';
+  }
 }
 
 // Copy the final output to the clipboard
 // eslint-disable-next-line no-unused-vars
 function copyOutput() {
   navigator.clipboard.writeText(document.getElementById('code-output').value);
+}
+
+// Copy the include output to the clipboard
+// eslint-disable-next-line no-unused-vars
+function copyIncludeOutput() {
+  navigator.clipboard.writeText(document.getElementById('include-output').value);
 }
 
 // eslint-disable-next-line no-unused-vars

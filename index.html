@@ -225,6 +225,20 @@
                       <input id="identifier" class="text-input" type="text" name="identifier" onchange="" value="epd_bitmap_"/>
                     </div>
                   </div>
+                  <div class="table-row">
+                    <div class="table-cell"><label>Name:</label></div>
+                    <div class="table-cell">
+                      <input id="outputName" class="text-input" type="text" name="outputName" placeholder="e.g. ngap" value=""/>
+                      <div class="note"><i>Optional: Used in variable names (e.g. epd_bitmap_frame_{name}_{id}_delay_0)</i></div>
+                    </div>
+                  </div>
+                  <div class="table-row">
+                    <div class="table-cell"><label>Delay (ms):</label></div>
+                    <div class="table-cell">
+                      <input id="outputDelay" class="text-input" type="number" name="outputDelay" min="0" placeholder="e.g. 60" value=""/>
+                      <div class="note"><i>Optional: If set, adds const uint16_t {name}_delay = {delay};</i></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -284,6 +298,12 @@
         <button type="button" id = "copy-button" onclick="copyOutput()">Copy Output</button>
         <button type="button" id = "download-button" onclick="downloadBinFile()">Download as binary file (.bin)</button>
         <textarea id="code-output" class="code-output"></textarea>
+        
+        <div id="include-output-container" style="display: none; margin-top: 15px;">
+          <label><strong>Include & Struct Code:</strong></label>
+          <button type="button" id="copy-include-button" onclick="copyIncludeOutput()" style="margin-left: 10px;">Copy</button>
+          <textarea id="include-output" class="code-output" style="height: 80px; margin-top: 5px;"></textarea>
+        </div>
       </section>
     </section>
   </div>
