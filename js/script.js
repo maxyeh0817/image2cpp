@@ -935,7 +935,7 @@ function generateOutputString() {
         let varname;
         if (outputName) {
           // Use the new naming format: epd_bitmap_frame_{name}_{id}_delay_0
-          const glyphClean = image.glyph.replace(/[^a-zA-Z0-9_-]/g, '_');
+          const glyphClean = image.glyph.replace(/[^a-zA-Z0-9_]/g, '_');
           varname = `${getIdentifier()}frame_${outputName}_${glyphClean}`;
         } else {
           varname = getIdentifier() + image.glyph.replace(/[^a-zA-Z0-9]/g, '_');
